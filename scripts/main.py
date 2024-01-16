@@ -1,7 +1,8 @@
 import os
 import praw
 import json
-from langchain.chat_models import ChatOpenAI
+#from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.schema import (AIMessage,HumanMessage,SystemMessage)
 from dotenv import load_dotenv
 from database.models import Stock
