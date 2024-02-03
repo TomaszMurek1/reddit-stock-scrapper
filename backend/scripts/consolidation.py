@@ -1,8 +1,11 @@
+import warnings
 from database.session import get_session
 from database.models import Stock
 from backend.scripts.functions.get_historical_data_by_date_range import (
     get_historical_data_by_date_range,
 )
+
+warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
 def is_consolidating(df, percentage=5):
@@ -17,13 +20,13 @@ def is_consolidating(df, percentage=5):
 
 
 def analyze_stock(stock, start_date, end_date, check_function):
-    data = get_historical_data_by_date_range(f"{stock.ticker}.WA", start_date, end_date)
+    data = get_historical_data_by_date_range(f"{stock.ticker}", start_date, end_date)
     return stock if not data.empty and check_function(data) else None
 
 
 def consolidation_case(stocks, start_date, end_date):
     consolidating_stocks = []
-    for stock in stocks[:500]:
+    for stock in stocks[:800]:
         result = analyze_stock(stock, start_date, end_date, is_consolidating)
         if result:
             consolidating_stocks.append(result)
@@ -34,9 +37,11 @@ def main():
     # Define your main logic here
     session = get_session()
     print("Starting analysis...")
-    stocks = session.query(Stock).all()[:50]  # Example: Analyze the first 5 stocks
+    stocks = (
+        session.query(Stock).filter(Stock.market == "MAIN").limit(800).all()
+    )  # Example: Analyze the first 5 stocks
     start_date = "2023-03-01"
-    end_date = "2024-01-15"
+    end_date = "2024-02-02"
 
     consolidating_stocks = consolidation_case(stocks, start_date, end_date)
 
@@ -47,5 +52,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-start_date = "..."  # Define your start date
-    end_date = "..."  # Define your end date
