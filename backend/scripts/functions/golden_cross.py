@@ -1,46 +1,37 @@
-import pandas as pd
-from backend.scripts.functions.get_historical_data_by_date_range import (
-    get_historical_data_by_date_range,
-)
+from datetime import datetime
 
 
-def check_golden_cross(
-    data: pd.DataFrame, short_ma_period: int = 50, long_ma_period: int = 200
-) -> bool:
-    """
-    Check for a Golden Cross in the provided data.
-
-    :param data: DataFrame containing stock price data.
-    :param short_ma_period: Period for the short moving average.
-    :param long_ma_period: Period for the long moving average.
-    :return: True if a Golden Cross is found, False otherwise.
-    """
+def check_golden_cross(data):
+    short_ma_period = 50
+    long_ma_period = 200
     short_ma = data["Close"].rolling(window=short_ma_period, min_periods=1).mean()
     long_ma = data["Close"].rolling(window=long_ma_period, min_periods=1).mean()
 
-    # Find the Golden Cross
     cross_over = (short_ma > long_ma) & (short_ma.shift(1) < long_ma.shift(1))
-    return any(cross_over)
+    if any(cross_over):
+        return (
+            cross_over[cross_over].index[-1].strftime("%Y-%m-%d")
+        )  # Return the last date of Golden Cross
+    return None
 
 
-def analyze_stock_for_golden_cross(stock_symbol: str, start_date: str, end_date: str):
-    """
-    Analyze a single stock for a Golden Cross event within a given date range.
+def analyze_stock_for_golden_cross(stock, data, volume_threshold=50000, days_limit=20):
 
-    :param stock_symbol: The stock symbol to analyze.
-    :param start_date: Start date for the analysis period.
-    :param end_date: End date for the analysis period.
-    :return: Result of the Golden Cross analysis.
-    """
-    data = get_historical_data_by_date_range(stock_symbol, start_date, end_date)
-    if data.empty:
-        print(f"No data available for {stock_symbol}")
-        return False
-    if check_golden_cross(data):
-        print(
-            f"Golden Cross found for {stock_symbol} between {start_date} and {end_date}"
-        )
-        return True
-    else:
-        print(f"No Golden Cross found for {stock_symbol}")
-        return False
+    # Calculate the average volume for the last 'days_limit' days and compare with the threshold
+    average_volume = (data["Close"] * data["Volume"]).tail(days_limit).mean()
+    if average_volume < volume_threshold:
+        print(f"Volume too low for {stock.name}")
+        return None
+    average_volume2 = (data["Close"] * data["Volume"]).tail(20).mean()
+    print(average_volume2 / 1000)
+    last_golden_cross_date = check_golden_cross(data)
+    if last_golden_cross_date:
+        # Check if the Golden Cross occurred within the last 'days_limit' days
+        last_date = datetime.strptime(last_golden_cross_date, "%Y-%m-%d")
+        if (datetime.today() - last_date).days <= days_limit:
+            return {
+                "ticker": stock.ticker,
+                "name": f"{stock.name}",
+                "last_golden_cross_date": last_golden_cross_date,
+            }
+    return None

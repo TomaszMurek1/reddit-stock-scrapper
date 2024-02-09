@@ -41,7 +41,7 @@ def main():
         session.query(Stock).filter(Stock.market == "MAIN").limit(800).all()
     )  # Example: Analyze the first 5 stocks
     start_date = "2023-03-01"
-    end_date = "2024-02-02"
+    end_date = "2024-02-09"
 
     consolidating_stocks = consolidation_case(stocks, start_date, end_date)
 
