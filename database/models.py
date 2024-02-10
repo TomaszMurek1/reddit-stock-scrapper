@@ -16,29 +16,45 @@ class Stock(Base):
 class GpwCashFlowStatement(Base):
     __tablename__ = "gpw_cash_flow_statement"
 
-    Id = Column(Integer, primary_key=True, autoincrement=True)
-    CompanyName = Column(String)
-    PublicationDate = Column(String)
-    OperatingCashFlows = Column(String, nullable=True)
-    Depreciation = Column(String, nullable=True)
-    InvestingCashFlows = Column(String, nullable=True)
-    CapitalExpenditures = Column(String, nullable=True)
-    FinancingCashFlows = Column(String, nullable=True)
-    StockIssuance = Column(String, nullable=True)
-    DividendsPaid = Column(String, nullable=True)
-    StockRepurchase = Column(String, nullable=True)
-    LeasePayments = Column(String, nullable=True)
-    TotalCashFlows = Column(String, nullable=True)
-    FreeCashFlow = Column(String, nullable=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    company_name = Column(String)
+    publication_date = Column(String)
+    operating_cash_flows = Column(String, nullable=True)
+    depreciation = Column(String, nullable=True)
+    investing_cash_flows = Column(String, nullable=True)
+    capital_expenditures = Column(String, nullable=True)
+    financing_cash_flows = Column(String, nullable=True)
+    stock_issuance = Column(String, nullable=True)
+    dividends_paid = Column(String, nullable=True)
+    stock_repurchase = Column(String, nullable=True)
+    lease_payments = Column(String, nullable=True)
+    total_cash_flows = Column(String, nullable=True)
+    free_cash_flow = Column(String, nullable=True)
 
 
-class TestTable(Base):
-    __tablename__ = "test_table1"
-    id = Column(
-        Integer, primary_key=True, autoincrement=True
-    )  # Adding an ID column as a primary key
-    PublicationDate = Column(String)
-    OperatingCashFlows = Column(String)
+class GpwBalanceSheet(Base):
+    __tablename__ = "gpw_balance_sheet"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    company_name = Column(String)
+    sales_revenue = Column(Float, nullable=True)
+    cost_of_goods_sold = Column(Float, nullable=True)
+    selling_expenses = Column(Float, nullable=True)
+    general_administrative_expenses = Column(Float, nullable=True)
+    gross_profit = Column(Float, nullable=True)
+    other_operating_income = Column(Float, nullable=True)
+    other_operating_expenses = Column(Float, nullable=True)
+    operating_income_ebit = Column(Float, nullable=True)
+    financial_income = Column(Float, nullable=True)
+    financial_expenses = Column(Float, nullable=True)
+    other_income_expense = Column(Float, nullable=True)
+    operating_profit = Column(Float, nullable=True)
+    extraordinary_items = Column(Float, nullable=True)
+    pre_tax_income = Column(Float, nullable=True)
+    net_income_from_discontinued_operations = Column(Float, nullable=True)
+    net_income = Column(Float, nullable=True)
+    net_income_to_majority_shareholders = Column(Float, nullable=True)
+    ebitda = Column(Float, nullable=True)
 
 
 engine = create_engine("sqlite:///database/stocks.db")

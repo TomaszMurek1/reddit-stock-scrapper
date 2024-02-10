@@ -67,7 +67,7 @@ def initialize_database():
 def save_data_to_database(session, df, ticker):
     for _, row in df.iterrows():
         row_data = dict(zip(df.columns, row))
-        row_data["CompanyName"] = ticker
+        row_data["company_name"] = ticker
         clean_row_data(row_data)
         record = GpwCashFlowStatement(**row_data)
         session.add(record)
@@ -76,7 +76,7 @@ def save_data_to_database(session, df, ticker):
 
 def clean_row_data(row_data):
     for column, value in row_data.items():
-        if value is not None and column != "PublicationDate":
+        if value is not None and column != "publication_date":
             try:
                 row_data[column] = float(value)
             except ValueError:
@@ -85,8 +85,10 @@ def clean_row_data(row_data):
 
 if __name__ == "__main__":
     ticker, biznesRadarId = "DELKO.WA", "DELKO"
-    url = f"https://www.biznesradar.pl/raporty-finansowe-przeplywy-pieniezne/{biznesRadarId}"
-    soup = fetch_soup(url)
+    urlRZiS = f"https://www.biznesradar.pl/raporty-finansowe-rachunek-zyskow-i-strat/{biznesRadarId}"
+    urlBilans = f"https://www.biznesradar.pl/raporty-finansowe-bilans/{biznesRadarId}"
+    urlPrzeplywy = f"https://www.biznesradar.pl/raporty-finansowe-przeplywy-pieniezne/{biznesRadarId}"
+    soup = fetch_soup(urlBilans)
     data = extract_table_data(soup)
     df = transform_data_to_dataframe(data)
     session = initialize_database()
