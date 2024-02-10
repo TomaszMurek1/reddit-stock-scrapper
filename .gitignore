@@ -34,6 +34,9 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+*.csv
+*.csv#
+*.pyc
 
 # Other common directories to ignore
 /public
