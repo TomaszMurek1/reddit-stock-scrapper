@@ -10,6 +10,7 @@ class Stock(Base):
     id = Column(Integer, primary_key=True)
     ticker = Column(String)
     name = Column(String)
+    market = Column(String)
 
 
 class CashFlowStatement(Base):

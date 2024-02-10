@@ -41,3 +41,4 @@ Thumbs.db
 # Other common directories to ignore
 /public
 /coverage
+stock_cross_analysis_results.csv
