@@ -14,7 +14,7 @@ Gpw_Cash_Flow_Statement_MAP = {
 }
 
 
-Gpw_Balance_Sheet_MAP = {
+Gpw_Profit_And_Loss_Statement_MAP = {
     "Data publikacji": "publication_date",
     "Przychody ze sprzedaży": "sales_revenue",
     "Techniczny koszt wytworzenia produkcji sprzedanej": "cost_of_goods_sold",
@@ -34,4 +34,44 @@ Gpw_Balance_Sheet_MAP = {
     "Zysk netto": "net_income",
     "Zysk netto akcjonariuszy jednostki dominującej": "net_income_to_majority_shareholders",
     "EBITDA": "ebitda",
+}
+
+Gpw_Balance_Sheet_MAP = {
+    "Data publikacji": "publication_date",
+    "Aktywa trwałe": "fixed_assets",
+    "Wartości niematerialne i prawne": "intangible_assets_and_goodwill",
+    "Wartość firmy": "goodwill",
+    "Rzeczowe składniki majątku trwałego": "tangible_fixed_assets",
+    "Aktywa z tytułu prawa do użytkowania": "right_of_use_assets",
+    "Należności długoterminowe": "long_term_receivables",
+    "Inwestycje długoterminowe": "long_term_investments",
+    "Pozostałe aktywa trwałe": "other_fixed_assets",
+    "Aktywa obrotowe": "current_assets",
+    "Zapasy": "inventories",
+    "Należności krótkoterminowe": "short_term_receivables",
+    "Inwestycje krótkoterminowe": "short_term_investments",
+    "Środki pieniężne i inne aktywa pieniężne": "cash_and_cash_equivalents",
+    "Pozostałe aktywa obrotowe": "other_current_assets",
+    "Aktywa trwałe przeznaczone do sprzedaży": "assets_held_for_sale",
+    "Aktywa razem": "total_assets",
+    "Kapitał własny akcjonariuszy jednostki dominującej": "equity_attributable_to_owners_of_parent",
+    "Kapitał (fundusz) podstawowy": "share_capital",
+    "Udziały (akcje) własne": "treasury_shares",
+    "Kapitał (fundusz) zapasowy": "reserve_capital",
+    "Udziały niekontrolujące": "non_controlling_interests",
+    "Zobowiązania długoterminowe": "long_term_liabilities",
+    "Z tytułu dostaw i usług": "trade_payables",
+    "Kredyty i pożyczki": "loans_and_borrowings",
+    "Z tytułu emisji dłużnych papierów wartościowych": "debt_securities_issued",
+    "Zobowiązania z tytułu leasingu finansowego": "lease_liabilities",
+    "Inne zobowiązania długoterminowe": "other_long_term_liabilities",
+    "Zobowiązania krótkoterminowe": "short_term_liabilities",
+    # "Z tytułu dostaw i usług" is repeated, likely refers to short term part here, so adjusted name accordingly
+    "Z tytułu dostaw i usług (krótkoterminowe)": "trade_payables_short_term",
+    "Kredyty i pożyczki (krótkoterminowe)": "loans_and_borrowings_short_term",
+    "Z tytułu emisji dłużnych papierów wartościowych (krótkoterminowe)": "debt_securities_issued_short_term",
+    "Zobowiązania z tytułu leasingu finansowego (krótkoterminowe)": "lease_liabilities_short_term",
+    "Inne zobowiązania krótkoterminowe": "other_short_term_liabilities",
+    "Rozliczenia międzyokresowe": "accruals_and_deferred_income",
+    "Pasywa razem": "total_liabilities_and_equity",
 }

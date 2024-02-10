@@ -32,11 +32,12 @@ class GpwCashFlowStatement(Base):
     free_cash_flow = Column(String, nullable=True)
 
 
-class GpwBalanceSheet(Base):
-    __tablename__ = "gpw_balance_sheet"
+class GpwProfitAndLossStatement(Base):
+    __tablename__ = "gpw_profit_and_loss_statement"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     company_name = Column(String)
+    publication_date = Column(String)
     sales_revenue = Column(Float, nullable=True)
     cost_of_goods_sold = Column(Float, nullable=True)
     selling_expenses = Column(Float, nullable=True)
@@ -55,6 +56,49 @@ class GpwBalanceSheet(Base):
     net_income = Column(Float, nullable=True)
     net_income_to_majority_shareholders = Column(Float, nullable=True)
     ebitda = Column(Float, nullable=True)
+
+
+class GpwBalanceSheet(Base):
+    __tablename__ = "gpw_balance_sheet"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    publication_date = Column(String)
+    company_name = Column(String)
+    fixed_assets = Column(Float, nullable=True)
+    intangible_assets_and_goodwill = Column(Float, nullable=True)
+    goodwill = Column(Float, nullable=True)
+    tangible_fixed_assets = Column(Float, nullable=True)
+    right_of_use_assets = Column(Float, nullable=True)
+    long_term_receivables = Column(Float, nullable=True)
+    long_term_investments = Column(Float, nullable=True)
+    other_fixed_assets = Column(Float, nullable=True)
+    current_assets = Column(Float, nullable=True)
+    inventories = Column(Float, nullable=True)
+    short_term_receivables = Column(Float, nullable=True)
+    short_term_investments = Column(Float, nullable=True)
+    cash_and_cash_equivalents = Column(Float, nullable=True)
+    other_current_assets = Column(Float, nullable=True)
+    assets_held_for_sale = Column(Float, nullable=True)
+    total_assets = Column(Float, nullable=True)
+    equity_attributable_to_owners_of_parent = Column(Float, nullable=True)
+    share_capital = Column(Float, nullable=True)
+    treasury_shares = Column(Float, nullable=True)
+    reserve_capital = Column(Float, nullable=True)
+    non_controlling_interests = Column(Float, nullable=True)
+    long_term_liabilities = Column(Float, nullable=True)
+    trade_payables = Column(Float, nullable=True)
+    loans_and_borrowings = Column(Float, nullable=True)
+    debt_securities_issued = Column(Float, nullable=True)
+    lease_liabilities = Column(Float, nullable=True)
+    other_long_term_liabilities = Column(Float, nullable=True)
+    short_term_liabilities = Column(Float, nullable=True)
+    trade_payables_short_term = Column(Float, nullable=True)
+    loans_and_borrowings_short_term = Column(Float, nullable=True)
+    debt_securities_issued_short_term = Column(Float, nullable=True)
+    lease_liabilities_short_term = Column(Float, nullable=True)
+    other_short_term_liabilities = Column(Float, nullable=True)
+    accruals_and_deferred_income = Column(Float, nullable=True)
+    total_liabilities_and_equity = Column(Float, nullable=True)
 
 
 engine = create_engine("sqlite:///database/stocks.db")

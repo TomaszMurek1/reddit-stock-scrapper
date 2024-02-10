@@ -3,8 +3,32 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy import create_engine
-from database.models import GpwCashFlowStatement
-from backend.scripts.helpers.dictionaries import Gpw_Cash_Flow_Statement_MAP
+from database.models import (
+    GpwBalanceSheet,
+    GpwCashFlowStatement,
+    GpwProfitAndLossStatement,
+)
+from backend.scripts.helpers.dictionaries import (
+    Gpw_Balance_Sheet_MAP,
+    Gpw_Profit_And_Loss_Statement_MAP,
+    Gpw_Cash_Flow_Statement_MAP,
+)
+
+URL_TO_MAP_AND_CLASS = {
+    "https://www.biznesradar.pl/raporty-finansowe-przeplywy-pieniezne/": (
+        Gpw_Cash_Flow_Statement_MAP,
+        GpwCashFlowStatement,
+    ),
+    "https://www.biznesradar.pl/raporty-finansowe-rachunek-zyskow-i-strat/": (
+        Gpw_Profit_And_Loss_Statement_MAP,
+        GpwProfitAndLossStatement,
+    ),
+    "https://www.biznesradar.pl/raporty-finansowe-bilans/": (
+        Gpw_Balance_Sheet_MAP,
+        GpwBalanceSheet,
+    ),
+    # Add more mappings as needed
+}
 
 
 def fetch_soup(url):
@@ -51,9 +75,9 @@ def parse_to_float(text):
         return text
 
 
-def transform_data_to_dataframe(data):
+def transform_data_to_dataframe(data, _map):
     df = pd.DataFrame(data).T
-    df.columns = [Gpw_Cash_Flow_Statement_MAP.get(col, col) for col in df.iloc[0]]
+    df.columns = [_map.get(col, col) for col in df.iloc[0]]
     return df.drop(df.index[0])
 
 
@@ -64,12 +88,12 @@ def initialize_database():
     return sessionmaker(bind=engine)()
 
 
-def save_data_to_database(session, df, ticker):
+def save_data_to_database(session, df, tableClass, ticker):
     for _, row in df.iterrows():
         row_data = dict(zip(df.columns, row))
         row_data["company_name"] = ticker
         clean_row_data(row_data)
-        record = GpwCashFlowStatement(**row_data)
+        record = tableClass(**row_data)
         session.add(record)
     session.commit()
 
@@ -85,12 +109,16 @@ def clean_row_data(row_data):
 
 if __name__ == "__main__":
     ticker, biznesRadarId = "DELKO.WA", "DELKO"
-    urlRZiS = f"https://www.biznesradar.pl/raporty-finansowe-rachunek-zyskow-i-strat/{biznesRadarId}"
-    urlBilans = f"https://www.biznesradar.pl/raporty-finansowe-bilans/{biznesRadarId}"
-    urlPrzeplywy = f"https://www.biznesradar.pl/raporty-finansowe-przeplywy-pieniezne/{biznesRadarId}"
-    soup = fetch_soup(urlBilans)
+    urlProfitAndLossStatement = (
+        "https://www.biznesradar.pl/raporty-finansowe-rachunek-zyskow-i-strat/"
+    )
+    urlBalanceSheet = "https://www.biznesradar.pl/raporty-finansowe-bilans/"
+    urlCashFlowStatement = (
+        "https://www.biznesradar.pl/raporty-finansowe-przeplywy-pieniezne/"
+    )
+    soup = fetch_soup(f"{urlBalanceSheet}{biznesRadarId}")
     data = extract_table_data(soup)
-    df = transform_data_to_dataframe(data)
+    df = transform_data_to_dataframe(data, Gpw_Balance_Sheet_MAP)
     session = initialize_database()
-    save_data_to_database(session, df, ticker)
+    save_data_to_database(session, df, GpwBalanceSheet, ticker)
     session.close()
