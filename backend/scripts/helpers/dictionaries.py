@@ -1,4 +1,4 @@
-Cash_Flow_Statement_MAP = {
+Gpw_Cash_Flow_Statement_MAP = {
     "Data publikacji": "PublicationDate",
     "Przepływy pieniężne z działalności operacyjnej": "OperatingCashFlows",
     "Amortyzacja": "Depreciation",

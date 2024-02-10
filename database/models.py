@@ -13,8 +13,8 @@ class Stock(Base):
     market = Column(String)
 
 
-class CashFlowStatement(Base):
-    __tablename__ = "cash_flow_statement"
+class GpwCashFlowStatement(Base):
+    __tablename__ = "gpw_cash_flow_statement"
 
     Id = Column(Integer, primary_key=True, autoincrement=True)
     CompanyName = Column(String)
