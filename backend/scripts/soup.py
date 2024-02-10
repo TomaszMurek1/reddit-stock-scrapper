@@ -14,20 +14,21 @@ from backend.scripts.helpers.dictionaries import (
     Gpw_Cash_Flow_Statement_MAP,
 )
 
+ticker, biznesRadarId = "DELKO.WA", "DELKO"
+base_url = "https://www.biznesradar.pl/raporty-finansowe-"
 URL_TO_MAP_AND_CLASS = {
-    "https://www.biznesradar.pl/raporty-finansowe-przeplywy-pieniezne/": (
+    f"{base_url}przeplywy-pieniezne/{biznesRadarId}": (
         Gpw_Cash_Flow_Statement_MAP,
         GpwCashFlowStatement,
     ),
-    "https://www.biznesradar.pl/raporty-finansowe-rachunek-zyskow-i-strat/": (
+    f"{base_url}rachunek-zyskow-i-strat/{biznesRadarId}": (
         Gpw_Profit_And_Loss_Statement_MAP,
         GpwProfitAndLossStatement,
     ),
-    "https://www.biznesradar.pl/raporty-finansowe-bilans/": (
+    f"{base_url}bilans/{biznesRadarId}": (
         Gpw_Balance_Sheet_MAP,
         GpwBalanceSheet,
     ),
-    # Add more mappings as needed
 }
 
 
@@ -108,17 +109,16 @@ def clean_row_data(row_data):
 
 
 if __name__ == "__main__":
-    ticker, biznesRadarId = "DELKO.WA", "DELKO"
-    urlProfitAndLossStatement = (
-        "https://www.biznesradar.pl/raporty-finansowe-rachunek-zyskow-i-strat/"
-    )
-    urlBalanceSheet = "https://www.biznesradar.pl/raporty-finansowe-bilans/"
-    urlCashFlowStatement = (
-        "https://www.biznesradar.pl/raporty-finansowe-przeplywy-pieniezne/"
-    )
-    soup = fetch_soup(f"{urlBalanceSheet}{biznesRadarId}")
-    data = extract_table_data(soup)
-    df = transform_data_to_dataframe(data, Gpw_Balance_Sheet_MAP)
+    url_map = {
+        "bilans": f"{base_url}bilans/{biznesRadarId}",
+        "rachunek-zyskow-i-strat": f"{base_url}rachunek-zyskow-i-strat/{biznesRadarId}",
+        "przeplywy-pieniezne": f"{base_url}przeplywy-pieniezne/{biznesRadarId}",
+    }
     session = initialize_database()
-    save_data_to_database(session, df, GpwBalanceSheet, ticker)
+    for url_key, full_url in url_map.items():
+        map_, class_ = URL_TO_MAP_AND_CLASS[full_url]
+        soup = fetch_soup(full_url)
+        data = extract_table_data(soup)
+        df = transform_data_to_dataframe(data, map_)
+        save_data_to_database(session, df, class_, ticker)
     session.close()
