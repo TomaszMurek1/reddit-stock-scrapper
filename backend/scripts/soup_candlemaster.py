@@ -4,6 +4,13 @@ import pandas as pd
 from bs4 import BeautifulSoup
 import yfinance as yf
 
+import warnings
+
+# Ignore specific FutureWarnings from yfinance
+warnings.filterwarnings(
+    "ignore",
+    message="The 'unit' keyword in TimedeltaIndex construction is deprecated")
+
 
 def fetch_soup(url):
     response = requests.get(url)
@@ -35,7 +42,7 @@ def extract_table_data(soup, date):
 links_with_dates = [
     {
         "date":
-        "2022-10-10",
+        "2024-01-31",
         "url":
         "https://candlemaster.pl/competitions/7aa8d158-7301-4bdf-9862-953530c031fc/show"
     },
@@ -51,8 +58,47 @@ def fetch_price(ticker, date):
     return None
 
 
+# User-specified dates
+date1 = datetime.strptime('2024-02-01', '%Y-%m-%d')
+date2 = datetime.strptime('2024-02-19', '%Y-%m-%d')
+date3 = datetime.strptime('2024-02-20', '%Y-%m-%d')
+dates = [date1, date2, date3]
+
+
+def get_closing_price(ticker, date):
+    stock_data = yf.download(ticker,
+                             start=date,
+                             end=date + pd.Timedelta(days=1))
+    if not stock_data.empty:
+        return stock_data['Close'][0]
+    return None
+
+
+def calculate_percentage_change(old_price, new_price):
+    if old_price and new_price:
+        return (new_price - old_price) / old_price * 100
+    return None
+
+
+# Adjusted function to fetch prices for multiple dates
+def fetch_prices_for_dates(ticker, original_date, future_dates):
+    # Find the earliest and latest date to minimize the data fetched
+    earliest_date = min(original_date, *future_dates)
+    latest_date = max(original_date, *future_dates)
+
+    stock = yf.Ticker(ticker)
+    hist = stock.history(start=earliest_date,
+                         end=latest_date + timedelta(days=1))
+
+    # Extract the closing prices for the original and future dates
+    prices = {date: None for date in [original_date, *future_dates]}
+    for date in prices.keys():
+        if date.strftime('%Y-%m-%d') in hist.index.strftime('%Y-%m-%d'):
+            prices[date] = hist.loc[date.strftime('%Y-%m-%d'), 'Close']
+    return prices
+
+
 if __name__ == "__main__":
-    constant_date = '2023-01-01'
     all_data = []
     headers = []
 
@@ -111,5 +157,21 @@ if __name__ == "__main__":
             })
 
     new_df = pd.DataFrame(transformed_data)
+    # Adding columns for price changes
+    for i, date in enumerate(dates, start=1):
+        new_df[f'Change to Date {i}'] = None
+
+    for index, row in new_df.iterrows():
+        ticker = row['Ticker'] + '.WA'
+        original_date = datetime.strptime(row['Date'], '%Y-%m-%d')
+        # Fetch all required prices at once
+        prices = fetch_prices_for_dates(ticker, original_date, dates)
+        original_price = prices[original_date]
+
+        for i, date in enumerate(dates, start=1):
+            new_price = prices[date]
+            percentage_change = calculate_percentage_change(
+                original_price, new_price)
+            new_df.at[index, f'Change to Date {i}'] = percentage_change
 
     print(new_df)
