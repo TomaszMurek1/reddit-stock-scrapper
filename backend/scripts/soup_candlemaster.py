@@ -87,82 +87,65 @@ def fetch_prices_for_dates(ticker, original_date, future_dates):
         return {}
 
 
+def transform_row_data(row):
+    """
+    Transforms a single row of the DataFrame into a list of dictionaries
+    representing the transformed data for Typ L and Typ S occurrences.
+    """
+    transformed_data = []
+    date = row['Date']
+    user = row['Uczestnik(nazwa z Twittera)']
+    # Define a mapping for the occurrences of Typ L and Typ S
+    type_positions = [('L', 3), ('S', 5), ('L', 7), ('S', 9)]
+
+    for typ, pos in type_positions:
+        if row.iloc[
+                pos] != '-----':  # Check if the value at the position is not the placeholder
+            transformed_data.append({
+                'Date': date,
+                'User': user,
+                'Type': typ,
+                'Ticker': row.iloc[pos]
+            })
+
+    return transformed_data
+
+
 if __name__ == "__main__":
     all_data = []
     headers = []
 
+    # Fetch and compile table data
     for index, item in enumerate(links_with_dates):
         soup = fetch_soup(item["url"])
         table_data, extracted_headers = extract_table_data(soup, item["date"])
 
-        # Use headers from the first table as the column names for the DataFrame
         if index == 0:
             headers = extracted_headers
 
         all_data.extend(table_data)
 
     df = pd.DataFrame(all_data, columns=headers)
-    transformed_data = []
-    for _, row in df.iterrows():
-        date = row['Date']
-        user = row['Uczestnik(nazwa z Twittera)']
 
-        # Since direct column name access is ambiguous due to duplicates,
-        # we access the columns by position. Here's how you might map them:
-        # Typ L (1st occurrence) -> row[3], Typ S (1st occurrence) -> row[5]
-        # Typ L (2nd occurrence) -> row[7], Typ S (2nd occurrence) -> row[9]
-        # These indices might need adjustment based on the actual DataFrame structure.
-
-        # Process Typ L and Typ S (first occurrence)
-        if row.iloc[3] != '-----':  # Adjust index for Typ L
-            transformed_data.append({
-                'Date': date,
-                'User': user,
-                'Type': 'L',
-                'Ticker': row.iloc[3]
-            })
-        if row.iloc[5] != '-----':  # Adjust index for Typ S
-            transformed_data.append({
-                'Date': date,
-                'User': user,
-                'Type': 'S',
-                'Ticker': row.iloc[5]
-            })
-
-        # Process Typ L and Typ S (second occurrence)
-        if row.iloc[7] != '-----':  # Adjust index for the second Typ L
-            transformed_data.append({
-                'Date': date,
-                'User': user,
-                'Type': 'L',
-                'Ticker': row.iloc[7]
-            })
-        if row.iloc[9] != '-----':  # Adjust index for the second Typ S
-            transformed_data.append({
-                'Date': date,
-                'User': user,
-                'Type': 'S',
-                'Ticker': row.iloc[9]
-            })
-
+    # Transform the DataFrame data
+    transformed_data = [
+        item for _, row in df.iterrows() for item in transform_row_data(row)
+    ]
     new_df = pd.DataFrame(transformed_data)
-    # Adding columns for price changes
+
+    # Add columns for price changes and calculate them
     for i, date in enumerate(dates, start=1):
         new_df[f'Change to Date {i}'] = None
 
     for index, row in new_df.iterrows():
-        ticker = row['Ticker'] + '.WA'
+        ticker = f"{row['Ticker']}.WA"
         original_date = datetime.strptime(row['Date'], '%Y-%m-%d')
-        # Fetch all required prices at once
         prices = fetch_prices_for_dates(ticker, original_date, dates)
-        if original_date in prices:
-            original_price = prices[original_date]
-        else:
-            original_price = None
 
-        for i, date in enumerate(dates, start=1):
-            new_price = prices.get(
-                date, None)  # .get method returns None if the key is not found
+        original_price = prices.get(original_date)
+
+        for i, future_date in enumerate(dates, start=1):
+            new_price = prices.get(future_date)
             percentage_change = calculate_percentage_change(
                 original_price, new_price)
             new_df.at[index, f'Change to Date {i}'] = percentage_change
