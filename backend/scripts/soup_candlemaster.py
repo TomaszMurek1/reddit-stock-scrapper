@@ -1,6 +1,8 @@
+from datetime import datetime, timedelta
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
+import yfinance as yf
 
 
 def fetch_soup(url):
@@ -40,7 +42,17 @@ links_with_dates = [
     # Add more links with dates as needed
 ]
 
+
+def fetch_price(ticker, date):
+    stock = yf.Ticker(ticker + '.WA')
+    hist = stock.history(start=date, end=date + timedelta(days=1))
+    if not hist.empty:
+        return hist['Close'][0]
+    return None
+
+
 if __name__ == "__main__":
+    constant_date = '2023-01-01'
     all_data = []
     headers = []
 
@@ -55,4 +67,49 @@ if __name__ == "__main__":
         all_data.extend(table_data)
 
     df = pd.DataFrame(all_data, columns=headers)
-    print(df)
+    transformed_data = []
+    for _, row in df.iterrows():
+        date = row['Date']
+        user = row['Uczestnik(nazwa z Twittera)']
+
+        # Since direct column name access is ambiguous due to duplicates,
+        # we access the columns by position. Here's how you might map them:
+        # Typ L (1st occurrence) -> row[3], Typ S (1st occurrence) -> row[5]
+        # Typ L (2nd occurrence) -> row[7], Typ S (2nd occurrence) -> row[9]
+        # These indices might need adjustment based on the actual DataFrame structure.
+
+        # Process Typ L and Typ S (first occurrence)
+        if row.iloc[3] != '-----':  # Adjust index for Typ L
+            transformed_data.append({
+                'Date': date,
+                'User': user,
+                'Type': 'L',
+                'Ticker': row.iloc[3]
+            })
+        if row.iloc[5] != '-----':  # Adjust index for Typ S
+            transformed_data.append({
+                'Date': date,
+                'User': user,
+                'Type': 'S',
+                'Ticker': row.iloc[5]
+            })
+
+        # Process Typ L and Typ S (second occurrence)
+        if row.iloc[7] != '-----':  # Adjust index for the second Typ L
+            transformed_data.append({
+                'Date': date,
+                'User': user,
+                'Type': 'L',
+                'Ticker': row.iloc[7]
+            })
+        if row.iloc[9] != '-----':  # Adjust index for the second Typ S
+            transformed_data.append({
+                'Date': date,
+                'User': user,
+                'Type': 'S',
+                'Ticker': row.iloc[9]
+            })
+
+    new_df = pd.DataFrame(transformed_data)
+
+    print(new_df)
