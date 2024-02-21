@@ -44,19 +44,9 @@ links_with_dates = [
         "date":
         "2024-01-31",
         "url":
-        "https://candlemaster.pl/competitions/7aa8d158-7301-4bdf-9862-953530c031fc/show"
+        "https://candlemaster.pl/competitions/15fdb4ac-8e03-4058-87cb-a9ed30ea7eeb/show"
     },
-    # Add more links with dates as needed
 ]
-
-
-def fetch_price(ticker, date):
-    stock = yf.Ticker(ticker + '.WA')
-    hist = stock.history(start=date, end=date + timedelta(days=1))
-    if not hist.empty:
-        return hist['Close'][0]
-    return None
-
 
 # User-specified dates
 date1 = datetime.strptime('2024-02-01', '%Y-%m-%d')
@@ -65,37 +55,36 @@ date3 = datetime.strptime('2024-02-20', '%Y-%m-%d')
 dates = [date1, date2, date3]
 
 
-def get_closing_price(ticker, date):
-    stock_data = yf.download(ticker,
-                             start=date,
-                             end=date + pd.Timedelta(days=1))
-    if not stock_data.empty:
-        return stock_data['Close'][0]
-    return None
-
-
 def calculate_percentage_change(old_price, new_price):
     if old_price and new_price:
         return (new_price - old_price) / old_price * 100
     return None
 
 
-# Adjusted function to fetch prices for multiple dates
 def fetch_prices_for_dates(ticker, original_date, future_dates):
-    # Find the earliest and latest date to minimize the data fetched
-    earliest_date = min(original_date, *future_dates)
-    latest_date = max(original_date, *future_dates)
+    try:
+        # Find the earliest and latest date to minimize the data fetched
+        earliest_date = min(original_date, *future_dates)
+        latest_date = max(original_date, *future_dates)
 
-    stock = yf.Ticker(ticker)
-    hist = stock.history(start=earliest_date,
-                         end=latest_date + timedelta(days=1))
+        stock = yf.Ticker(ticker)
+        hist = stock.history(start=earliest_date,
+                             end=latest_date + timedelta(days=1))
 
-    # Extract the closing prices for the original and future dates
-    prices = {date: None for date in [original_date, *future_dates]}
-    for date in prices.keys():
-        if date.strftime('%Y-%m-%d') in hist.index.strftime('%Y-%m-%d'):
-            prices[date] = hist.loc[date.strftime('%Y-%m-%d'), 'Close']
-    return prices
+        # Convert hist.index to a list of string-formatted dates for comparison
+        formatted_hist_dates = hist.index.strftime('%Y-%m-%d').tolist()
+
+        # Extract the closing prices for the original and future dates
+        prices = {date: None for date in [original_date, *future_dates]}
+        for date in prices.keys():
+            formatted_date = date.strftime('%Y-%m-%d')
+            if formatted_date in formatted_hist_dates:
+                prices[date] = hist.loc[hist.index == formatted_date,
+                                        'Close'].values[0]
+        return prices
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return {}
 
 
 if __name__ == "__main__":
@@ -166,10 +155,14 @@ if __name__ == "__main__":
         original_date = datetime.strptime(row['Date'], '%Y-%m-%d')
         # Fetch all required prices at once
         prices = fetch_prices_for_dates(ticker, original_date, dates)
-        original_price = prices[original_date]
+        if original_date in prices:
+            original_price = prices[original_date]
+        else:
+            original_price = None
 
         for i, date in enumerate(dates, start=1):
-            new_price = prices[date]
+            new_price = prices.get(
+                date, None)  # .get method returns None if the key is not found
             percentage_change = calculate_percentage_change(
                 original_price, new_price)
             new_df.at[index, f'Change to Date {i}'] = percentage_change
