@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 import yfinance as yf
-
+import pdb
 import warnings
 
 # Ignore specific FutureWarnings from yfinance
@@ -13,7 +13,7 @@ warnings.filterwarnings(
 
 
 def fetch_soup(url):
-    response = requests.get(url)
+    response = requests.get(url, verify=False)
     return BeautifulSoup(response.text, "html.parser")
 
 
@@ -41,46 +41,78 @@ def extract_table_data(soup, date):
 
 links_with_dates = [
     {
+        "period":
+        "Luty",
         "date":
         "2024-01-31",
         "url":
+        "https://candlemaster.pl/competitions/7aa8d158-7301-4bdf-9862-953530c031fc/show"
+    },
+    {
+        "period":
+        "Styczen",
+        "date":
+        "2023-01-02",
+        "url":
         "https://candlemaster.pl/competitions/15fdb4ac-8e03-4058-87cb-a9ed30ea7eeb/show"
+    },
+    {
+        "period":
+        "Grudzien",
+        "date":
+        "2023-12-01",
+        "url":
+        "https://candlemaster.pl/competitions/0476ccb7-37c4-4cff-959a-7e808bc3142e/show"
+    },
+    {
+        "period":
+        "Listopad",
+        "date":
+        "2023-11-01",
+        "url":
+        "https://candlemaster.pl/competitions/f12d4f13-79cd-4a38-8e2c-709a69416325/show"
     },
 ]
 
 # User-specified dates
-date1 = datetime.strptime('2024-02-01', '%Y-%m-%d')
-date2 = datetime.strptime('2024-02-19', '%Y-%m-%d')
-date3 = datetime.strptime('2024-02-20', '%Y-%m-%d')
-dates = [date1, date2, date3]
+
+date2 = '2023-11-30'
+date3 = '2023-12-29'
+date4 = '2024-01-31'
+date5 = '2024-02-29'
+dates = [date5, date4, date3, date2]
 
 
 def calculate_percentage_change(old_price, new_price):
     if old_price and new_price:
-        return (new_price - old_price) / old_price * 100
+        difference = (new_price - old_price) / old_price * 100
+        return difference
     return None
 
 
 def fetch_prices_for_dates(ticker, original_date, future_dates):
     try:
         # Find the earliest and latest date to minimize the data fetched
-        earliest_date = min(original_date, *future_dates)
-        latest_date = max(original_date, *future_dates)
+        earliest_date = "2023-10-30"  # min(original_date, future_dates[2])
+        latest_date = max([original_date] + future_dates)
+
+        earliest_date_obj = datetime.strptime(earliest_date, "%Y-%m-%d")
+        latest_date_obj = datetime.strptime(latest_date, "%Y-%m-%d")
 
         stock = yf.Ticker(ticker)
-        hist = stock.history(start=earliest_date,
-                             end=latest_date + timedelta(days=1))
+        hist = stock.history(start=earliest_date_obj - timedelta(days=1),
+                             end=latest_date_obj + timedelta(days=1))
 
         # Convert hist.index to a list of string-formatted dates for comparison
         formatted_hist_dates = hist.index.strftime('%Y-%m-%d').tolist()
 
         # Extract the closing prices for the original and future dates
         prices = {date: None for date in [original_date, *future_dates]}
+
         for date in prices.keys():
-            formatted_date = date.strftime('%Y-%m-%d')
-            if formatted_date in formatted_hist_dates:
-                prices[date] = hist.loc[hist.index == formatted_date,
-                                        'Close'].values[0]
+
+            if date in formatted_hist_dates:
+                prices[date] = hist.loc[hist.index == date, 'Close'].values[0]
         return prices
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -111,6 +143,56 @@ def transform_row_data(row):
     return transformed_data
 
 
+def calculate_prediction_accuracy(df):
+    """
+    Calculate and rank users based on the accuracy of their stock price predictions, handling None or NaN values.
+    
+    Args:
+    df (DataFrame): A pandas DataFrame with columns ['Date', 'User', 'Type', 'Ticker', 'Percentage Change']
+    
+    Returns:
+    DataFrame: A DataFrame with columns ['User', 'Correct_Score_L', 'Correct_Score_S', 'Total_Correct_Score']
+               ranked by 'Total_Correct_Score'.
+    """
+
+    # Convert '2024-02-01' column to numeric, coercing errors to NaN, then fill NaN with 0
+    df['2024-02-29'] = pd.to_numeric(df['2024-02-29'],
+                                     errors='coerce').fillna(0)
+
+    # Calculate the score based on prediction accuracy
+    df['Correct_Score'] = df.apply(lambda row: abs(row['2024-02-29']) if (
+        (row['Type'] == 'L' and row['2024-02-29'] > 0) or
+        (row['Type'] == 'S' and row['2024-02-29'] < 0)) else -abs(row[
+            '2024-02-29']),
+                                   axis=1)
+
+    # Separate scores for L and S predictions
+    df['Correct_Score_L'] = df.apply(lambda row: row['Correct_Score']
+                                     if row['Type'] == 'L' else 0,
+                                     axis=1)
+    df['Correct_Score_S'] = df.apply(lambda row: row['Correct_Score']
+                                     if row['Type'] == 'S' else 0,
+                                     axis=1)
+
+    def custom_aggregation(series):
+        # Convert each value in the series by dividing by 100, adding 1, and then return the product of all values
+        return (series / 100 + 1).prod()
+
+    # Aggregate scores by user
+    user_scores = df.groupby('User').agg({
+        'Correct_Score_L': 'sum',
+        'Correct_Score_S': 'sum'
+    })
+    user_scores['Total_Correct_Score'] = user_scores[
+        'Correct_Score_L'] + user_scores['Correct_Score_S']
+
+    # Sort by Total_Correct_Score for ranking
+    user_ranking = user_scores.sort_values(by='Total_Correct_Score',
+                                           ascending=False).reset_index()
+
+    return user_ranking
+
+
 if __name__ == "__main__":
     all_data = []
     headers = []
@@ -135,19 +217,31 @@ if __name__ == "__main__":
 
     # Add columns for price changes and calculate them
     for i, date in enumerate(dates, start=1):
-        new_df[f'Change to Date {i}'] = None
+        new_df[f'{date}'] = None
 
-    for index, row in new_df.iterrows():
+    for index, row in new_df.head(2000).iterrows():
         ticker = f"{row['Ticker']}.WA"
-        original_date = datetime.strptime(row['Date'], '%Y-%m-%d')
-        prices = fetch_prices_for_dates(ticker, original_date, dates)
+        original_date_str = row['Date']
+        original_date = datetime.strptime(original_date_str, "%Y-%m-%d")
+        prices = fetch_prices_for_dates(ticker, original_date_str, dates)
 
-        original_price = prices.get(original_date)
+        original_price = prices.get(original_date_str)
 
-        for i, future_date in enumerate(dates, start=1):
-            new_price = prices.get(future_date)
-            percentage_change = calculate_percentage_change(
-                original_price, new_price)
-            new_df.at[index, f'Change to Date {i}'] = percentage_change
+        for i, future_date_str in enumerate(dates, start=1):
+            future_date = datetime.strptime(future_date_str, "%Y-%m-%d")
+            if future_date > original_date:
+                new_price = prices.get(future_date_str)
+                percentage_change = calculate_percentage_change(
+                    original_price, new_price)
+                new_df.at[index, future_date_str] = percentage_change
+            else:
+                # Optionally handle the case where future_date is not after original_date
+                print(
+                    f"Skipping calculation for {future_date_str} as it is not")
 
     print(new_df)
+    new_df.to_csv('candle_master.csv', index=False)
+
+    ranked_users = calculate_prediction_accuracy(new_df)
+    print(ranked_users)
+    ranked_users.to_csv('ranked_users.csv', index=False)
